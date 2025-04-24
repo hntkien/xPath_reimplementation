@@ -1,17 +1,13 @@
 # xPath
-This is a [PyTorch](https://pytorch.org/) implementation for our AAAI'23 paper: Towards Fine-grained Explainability for Heterogeneous Graph Neural Network.
-
-Here also include the supplementary materials for proof of theorems in the paper and additional experimental results.
-
-An alternative implementation based on [Mindspore](https://www.mindspore.cn/) is coming soon.
+This is a [PyTorch Geometric](https://pytorch-geometric.readthedocs.io/en/latest/index.html) reimplementation for the paper: Towards Fine-grained Explainability for Heterogeneous Graph Neural Network.
 
 
 ## Requirements
-- Python 3.7
-- torch~=1.10.0
-- dgl~=0.8.2
-- numpy~=1.21.6
-- tqdm~=4.64.0
+- Python 3.10
+- torch~=2.5.0
+- PyG~=2.6.1
+- numpy~=2.1.2
+- tqdm~=4.67.1
 
 
 ## Datasets
