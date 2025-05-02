@@ -7,3 +7,4 @@ ckpt/
 data/
 config.py
 win_venv/
+requirements.txt
