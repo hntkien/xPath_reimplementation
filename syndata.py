@@ -24,10 +24,14 @@ class SyntheticHGBDataset(DGLDataset):
         graph (DGLHeteroGraph): The constructed heterogeneous graph.
         num_classes (int): Number of classes in the dataset.
     """
-    def __init__(self, dataset_name: str, raw_dir: str="./data"):
+    def __init__(
+            self, 
+            dataset_name: str, 
+            raw_dir: str="./data", 
+            force_reload: bool=False):
         self.dataset_name = dataset_name 
         self.dataset_path = os.path.join(raw_dir, dataset_name) 
-        super().__init__(name=dataset_name) 
+        super().__init__(name=dataset_name, force_reload=force_reload) 
 
     def process(self): 
         # --- Load Node Data --- #
@@ -116,8 +120,15 @@ class SyntheticHGBDataset(DGLDataset):
             self.graph.nodes[self.label_ntype].data[f"{split}_mask"] = mask 
 
         # --- Save number of classes --- #
-        self.num_classes = int(
-            self.graph.nodes[self.label_ntype].data["label"].max().item() + 1)
+        # self.num_classes = int(
+        #     self.graph.nodes[self.label_ntype].data["label"].max().item() + 1)
+        label_data = self.graph.nodes[self.label_ntype].data["label"] 
+
+        if self.is_multi_label: 
+            self.num_classes = label_data.shape[1] 
+        else:
+            self.num_classes = int(label_data.max().item()) + 1 
+
         
     def _load_labels(self, filename: str) -> torch.Tensor: 
         df = pd.read_csv(
@@ -181,16 +192,33 @@ class SyntheticHGBDataset(DGLDataset):
         return 1
 
 if __name__ == "__main__":
-    dataset = SyntheticHGBDataset(dataset_name="syn_acm")
+    dataset = SyntheticHGBDataset(dataset_name="syn_dblp", force_reload=True)
     graph = dataset[0]
+
     print(graph)
+    print(f"\n Dataset Statistics")
     print(f"Number of classes: {dataset.num_classes}")
-    print(f"Label node type: {dataset.label_ntype}")
-    print(f"Number of nodes: {graph.num_nodes()}")
-    print(f"Number of edges: {graph.num_edges()}")
+    print(f"Is multi-label: {dataset.is_multi_label}")
+    print(f"Total number of nodes: {graph.num_nodes()}")
+    print(f"Total number of edges: {graph.num_edges()}")
     print(f"Node types: {graph.ntypes}")
     print(f"Edge types: {graph.etypes}")
+
+    print("\n Node Type Summary")
     for ntype in graph.ntypes:
-        print(f"Number of nodes of type '{ntype}': {graph.num_nodes(ntype)}")
-    for etype in graph.etypes:
-        print(f"Number of edges of type '{etype}': {graph.num_edges(etype)}")
+        print(f"  - '{ntype}': {graph.num_nodes(ntype)} nodes")
+        if 'label' in graph.nodes[ntype].data:
+            labels = graph.nodes[ntype].data['label']
+            print(f"    • Labels present with shape: {labels.shape}")
+            if not dataset.is_multi_label:
+                unique_labels, counts = torch.unique(labels, return_counts=True)
+                print(f"    • Label distribution: {dict(zip(unique_labels.tolist(), counts.tolist()))}")
+
+        for mask_type in ['train_mask', 'val_mask', 'test_mask']:
+            if mask_type in graph.nodes[ntype].data:
+                num_masked = int(graph.nodes[ntype].data[mask_type].sum().item())
+                print(f"    • {mask_type}: {num_masked} nodes")
+
+    print("\n Edge Type Summary")
+    for etype in graph.canonical_etypes:
+        print(f"  - '{etype}': {graph.num_edges(etype)} edges")
