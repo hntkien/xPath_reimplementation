@@ -2,11 +2,9 @@ import os
 import pandas as pd 
 import torch 
 import dgl 
-import numpy as np 
 from dgl.data import DGLDataset 
-# # from dgl.heterograph import DGLHeteroGraph 
-# from typing import Tuple, Dict 
 
+# ========== SyntheticHGBDataset Class ========== #
 class SyntheticHGBDataset(DGLDataset):
     """Custom DGL Dataset for Synthetic Heterogeneous Graphs.
 
@@ -190,9 +188,40 @@ class SyntheticHGBDataset(DGLDataset):
     
     def __len__(self) -> int:
         return 1
+    
+# ========== End of SyntheticHGBDataset Class ========== #
 
+# ========== Check Dataset Conditions ========== # 
+def check_dataset_conditions(graph, target_ntype, is_multi_label):
+    node_data = graph.nodes[target_ntype].data
+    label = node_data['label']
+    train_mask = node_data.get('train_mask')
+    val_mask = node_data.get('val_mask')
+    test_mask = node_data.get('test_mask')
+
+    # Check if masks are present
+    assert train_mask is not None, "'train_mask' not found"
+    assert val_mask is not None, "'val_mask' not found"
+    assert test_mask is not None, "'test_mask' not found"
+
+    # Check shape and dtype of masks
+    for name, mask in [('train_mask', train_mask), ('val_mask', val_mask), ('test_mask', test_mask)]:
+        assert mask.dtype == torch.bool, f"'{name}' must be a boolean tensor"
+        assert mask.ndim == 1, f"'{name}' must be a 1D tensor"
+        assert mask.shape[0] == graph.num_nodes(target_ntype), f"'{name}' must match number of nodes of type '{target_ntype}'"
+
+    # Check label shape
+    if is_multi_label:
+        assert label.ndim == 2, "'label' should be 2D for multi-label classification"
+    else:
+        assert label.ndim == 1 or (label.ndim == 2 and label.shape[1] == 1), "'label' should be 1D for single-label classification"
+
+    print("✅ All dataset conditions passed.")
+
+
+# ========== Main Execution ========== #
 if __name__ == "__main__":
-    dataset = SyntheticHGBDataset(dataset_name="syn_dblp", force_reload=True)
+    dataset = SyntheticHGBDataset(dataset_name="syn_recipe", force_reload=True)
     graph = dataset[0]
 
     print(graph)
@@ -222,3 +251,5 @@ if __name__ == "__main__":
     print("\n Edge Type Summary")
     for etype in graph.canonical_etypes:
         print(f"  - '{etype}': {graph.num_edges(etype)} edges")
+
+    check_dataset_conditions(graph, dataset.label_ntype, dataset.is_multi_label)
