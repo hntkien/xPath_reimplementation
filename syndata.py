@@ -72,7 +72,7 @@ class SyntheticHGBDataset(DGLDataset):
         for _, row in edge_df.iterrows():
             src_id = row["src"] 
             dst_id = row["dst"]
-            etype_id = int(row["etype"]) 
+            etype_id = int(row["etype"]) - edge_types.min()
 
             src_type = str(nid_to_ntype[src_id]) 
             dst_type = str(nid_to_ntype[dst_id]) 
@@ -221,7 +221,7 @@ def check_dataset_conditions(graph, target_ntype, is_multi_label):
 
 # ========== Main Execution ========== #
 if __name__ == "__main__":
-    dataset = SyntheticHGBDataset(dataset_name="syn_acm", force_reload=True)
+    dataset = SyntheticHGBDataset(dataset_name="syn_dblp", force_reload=True)
     graph = dataset[0]
 
     print(graph)
