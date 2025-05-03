@@ -76,7 +76,7 @@ class SyntheticHGBDataset(DGLDataset):
 
             src_type = str(nid_to_ntype[src_id]) 
             dst_type = str(nid_to_ntype[dst_id]) 
-            rel_type = f"rel_{etype_id}" 
+            rel_type = f"{etype_id}" 
 
             canonical_etype = (src_type, rel_type, dst_type) 
 
@@ -221,7 +221,7 @@ def check_dataset_conditions(graph, target_ntype, is_multi_label):
 
 # ========== Main Execution ========== #
 if __name__ == "__main__":
-    dataset = SyntheticHGBDataset(dataset_name="syn_recipe", force_reload=True)
+    dataset = SyntheticHGBDataset(dataset_name="syn_acm", force_reload=True)
     graph = dataset[0]
 
     print(graph)
