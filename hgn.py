@@ -1,8 +1,8 @@
 import torch
 import torch.nn.functional as F
-from torch import nn
+import torch.nn as nn 
 import dgl
-from dgl import function as fn
+import dgl.function as fn 
 from dgl.nn.pytorch import edge_softmax
 from dgl.nn.pytorch.utils import Identity
 import math
@@ -153,8 +153,7 @@ class myHeteroGATConv(nn.Module):
                 graph.nodes[dst].data['er'] = er
                 e_feat = self.edge_emb[int(etype)].unsqueeze(0)
                 e_feat = self.fc_e(e_feat).view(-1, self._num_heads, self._edge_feats)
-                ee = (e_feat * self.attn_e).sum(dim=-1).unsqueeze(-1).expand(graph.number_of_edges(etype),
-                                                                             self._num_heads, 1)
+                ee = (e_feat * self.attn_e).sum(dim=-1).unsqueeze(-1).expand(graph.number_of_edges(etype), self._num_heads, 1)
                 graph.apply_edges(fn.u_add_v("el", "er", "e"), etype=etype)
                 graph.edges[etype].data["a"] = self.leaky_relu(graph.edges[etype].data.pop("e") + ee)
 
@@ -211,12 +210,16 @@ class SimpleHeteroHGN(nn.Module):
             residual,
             alpha,
             shared_weight,
+            is_multi_label=False,
     ):
         super(SimpleHeteroHGN, self).__init__()
-        self.cross_entropy_loss = nn.CrossEntropyLoss()
+        self.is_multi_label = is_multi_label 
+        self.cross_entropy_loss = (
+            nn.BCEWithLogitsLoss() if is_multi_label else nn.CrossEntropyLoss()
+        )
 
         self.g = None
-        self.g_cs = []
+        # self.g_cs = []
         self.num_layers = num_layers
         self.gat_layers = nn.ModuleList()
         self.activation = F.elu
@@ -265,27 +268,31 @@ class SimpleHeteroHGN(nn.Module):
         for l in range(self.num_layers):
             h, res_attn = self.gat_layers[l](self.g, h, res_attn=res_attn)
             h = {n: h[n].flatten(1) for n in h}
-        h = h[target_ntype]
-        logits = self.fc(h)
+        # h = h[target_ntype]
+        logits = self.fc(h[target_ntype])
         logits = logits / (torch.norm(logits, dim=1, keepdim=True) + self.epsilon)
         return logits
 
-    def loss(self, x, target_ntype, target_node, label):
+    def loss(self, x, target_ntype, target_node, labels):
         logits = self.forward(x, target_ntype)
         y = logits[target_node]
-        return self.cross_entropy_loss(y, label)
+        if self.is_multi_label:
+            return self.cross_entropy_loss(y, labels.float())
+        else:
+            return self.cross_entropy_loss(y, labels)
 
 
 
 class HGTLayer(nn.Module):
-    def __init__(self,
-                 in_dim,
-                 out_dim,
-                 node_dict,
-                 edge_dict,
-                 n_heads,
-                 dropout=0.2,
-                 use_norm=False):
+    def __init__(
+            self,
+            in_dim,
+            out_dim,
+            node_dict,
+            edge_dict,
+            n_heads,
+            dropout=0.2,
+            use_norm=False):
         super(HGTLayer, self).__init__()
 
         self.in_dim = in_dim
