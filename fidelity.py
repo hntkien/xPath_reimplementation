@@ -48,8 +48,14 @@ def get_path_gm(g, x, target_ntype, nid, n2etp):
 
     for tp in gm_nodes:
         n = len(gm_nodes[tp])
-        gm_edges[n2etp[(tp, tp)]] = ([i for i in range(n)], [i for i in range(n)])
-        feat[tp] = g.nodes[tp].data['nfeat'][gm_nodes[tp], :]
+        
+        if (tp, tp) in n2etp:
+            gm_edges[n2etp[(tp, tp)]] = ([i for i in range(n)], [i for i in range(n)])
+        else:
+            # Skip this connection or log a message
+            print(f"Warning: No edge type defined between {tp} and itself")
+            
+        feat[tp] = g.nodes[tp].data['feat'][gm_nodes[tp], :]
 
     new_target_id = gm_nodes[target_ntype].index(nid)
 
@@ -85,7 +91,7 @@ def eval_fidelity(x, g, model, label, target_ntype, n_layer, num_classes, node_l
         g_c = g_c.to(device)
         X = {}
         for tp in g_c.ntypes:
-            X[tp] = g_c.ndata["nfeat"][tp].clone()
+            X[tp] = g_c.nodes[tp].data['feat'].clone()
 
         with torch.no_grad():
             model.g = g_c
