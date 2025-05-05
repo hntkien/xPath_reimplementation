@@ -21,8 +21,8 @@ def get_model(hgn_model_type, n_layer, num_classes, graph_path, index_path):
         in_dim = {n: g.nodes[n].data['nfeat'].shape[1] for n in g.ntypes}
         edge_type_num = len(g.etypes)
 
-        model = hgn.SimpleHeteroHGN(32, edge_type_num, in_dim, 32, num_classes, n_layer,
-                                    [8] * n_layer, 0.5, 0.5, 0.05, True, 0.05, shared_weight=True)
+        model = hgn.SimpleHeteroHGN(32, edge_type_num, in_dim, 32, num_classes, 
+                                    n_layer, [8] * n_layer, 0.5, 0.5, 0.05, True, 0.05, shared_weight=True)
 
     elif hgn_model_type == 'hgt':
         node_dict = {}
@@ -34,8 +34,9 @@ def get_model(hgn_model_type, n_layer, num_classes, graph_path, index_path):
         for etype in g.etypes:
             edge_dict[etype] = len(edge_dict)
             g.edges[etype].data['id'] = torch.ones(g.number_of_edges(etype), dtype=torch.long) * edge_dict[etype]
-        model = hgn.HGT(node_dict, edge_dict, n_inp=n_inp, n_hid=32, n_out=num_classes,
-                        n_layers=n_layer, n_heads=4, use_norm=True)
+        model = hgn.HGT(node_dict, edge_dict, n_inp=n_inp, n_hid=32, 
+                        n_out=num_classes, n_layers=n_layer, n_heads=4, 
+                        use_norm=True)
 
     return g, model, _info
 
