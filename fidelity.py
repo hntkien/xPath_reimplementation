@@ -69,7 +69,7 @@ def eval_fidelity(x, g, model, label, target_ntype, n_layer, num_classes, node_l
 
     sampler = dgl.dataloading.MultiLayerFullNeighborSampler(n_layer)
     subgraph_dataloader = \
-        dgl.dataloading.NodeDataLoader(g, {target_ntype: node_list.type(torch.int64).to(device)},
+        dgl.dataloading.DataLoader(g, {target_ntype: node_list.type(torch.int64).to(device)},
                                     sampler, batch_size=1, shuffle=False, drop_last=False)
     i = 0
     fmask_accs = []
