@@ -1,8 +1,11 @@
+import os
+import re
 import json
 import torch
 import dgl
 import hgn
 import numpy as np
+import pandas as pd 
 
 def accuracy(y_pred, y_true):
     y_true = y_true.squeeze().long()
@@ -48,6 +51,8 @@ def filter_test_nodes(node_list, label, pred_list_path):
     correct_node_list = []
     for i in range(len(node_list)):
         target_id = int(node_list[i].item())
+        if str(target_id) not in pred_list:
+            continue
         if label[target_id] == pred_list[str(target_id)]:
             correct_node_list.append(target_id)
     return correct_node_list
@@ -86,3 +91,48 @@ def load_xpath(result_path, k=5):
         res[int(x)] = paths
 
     return res, c / len(res)
+
+def load_ground_truth_causes(
+        dataset_name: str, 
+        base_path: str="./data") -> tuple:
+    """Constructs a mapping from target node ID (from motif filename) to cause node IDs. 
+
+    Args:
+        dataset_name (str): Name of the dataset. 
+        base_path (str, optional): Base path where datasets are stored. 
+            Defaults to "./data".
+
+    Returns:
+        tuple: 
+            - cause_dict (dict[str, list[int]]): target node ID -> list of cause node IDs. 
+            - target_nodes (list[int]): All target node IDs found in the motif files. 
+    """
+    dataset_path = os.path.join(base_path, dataset_name, "motifs")
+    motif_pattern = re.compile(r"motif_(\d+)\.csv")
+
+    cause_dict = {} 
+    target_nodes = [] 
+
+    all_files = os.listdir(dataset_path)
+    # print(f"Scanning {len(all_files)} files in: {dataset_path}")
+
+    for filename in all_files:
+        match = motif_pattern.match(filename)
+
+        if match: 
+            target_id = int(match.group(1)) 
+            file_path = os.path.join(dataset_path, filename)
+            # print(f"Processing {filename} as target node {target_id}")
+
+            df = pd.read_csv(file_path, header=0, names=["src", "dst", "etype"])
+
+            # Cause nodes are all nodes except the target node 
+            # related_nodes = set(df["src"].tolist() + df["dst"].tolist())
+            # cause_nodes = list(related_nodes - {target_id})
+
+            related_nodes = set(df["src"].tolist())
+
+            cause_dict[str(target_id)] = list(related_nodes)
+            target_nodes.append(target_id)
+        
+    return cause_dict, target_nodes
