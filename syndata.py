@@ -122,10 +122,13 @@ class SyntheticHGBDataset(DGLDataset):
         #     self.graph.nodes[self.label_ntype].data["label"].max().item() + 1)
         label_data = self.graph.nodes[self.label_ntype].data["label"] 
 
-        if self.is_multi_label: 
-            self.num_classes = label_data.shape[1] 
-        else:
-            self.num_classes = int(label_data.max().item()) + 1 
+        # if self.is_multi_label: 
+        #     self.num_classes = label_data.shape[1] 
+        # else:
+        #     self.num_classes = int(label_data.max().item()) + 1 
+
+        # Treat multi-label as single-label for now 
+        self.num_classes = int(label_data.max().item()) + 1
 
         
     def _load_labels(self, filename: str) -> torch.Tensor: 
@@ -145,17 +148,22 @@ class SyntheticHGBDataset(DGLDataset):
         is_multi_label = any(" " in label for label in label_strs) 
 
         if is_multi_label:
-            label_lists = [
-                list(map(int, label.split())) for label in label_strs]
-            max_label = max(
-                [max(lbls) for lbls in label_lists if lbls]) if label_lists else 0 
-            label_tensor = torch.zeros(
-                (len(label_lists), max_label+1), dtype=torch.float32)
             
-            for i, lbls in enumerate(label_lists):
-                label_tensor[i, lbls] = 1.0 
+            # label_lists = [
+            #     list(map(int, label.split())) for label in label_strs]
+            # max_label = max(
+            #     [max(lbls) for lbls in label_lists if lbls]) if label_lists else 0 
+            # label_tensor = torch.zeros(
+            #     (len(label_lists), max_label+1), dtype=torch.float32)
+            
+            # for i, lbls in enumerate(label_lists):
+            #     label_tensor[i, lbls] = 1.0 
             
             self.is_multi_label = True 
+            # Temporarily treat multi-label as single-label dataset by selecting the first label 
+            labels = [int(label.split()[0]) for label in label_strs]
+            label_tensor = torch.tensor(labels, dtype=torch.long)
+
             return label_tensor 
         else:
             labels = torch.tensor(
@@ -210,18 +218,18 @@ def check_dataset_conditions(graph, target_ntype, is_multi_label):
         assert mask.ndim == 1, f"'{name}' must be a 1D tensor"
         assert mask.shape[0] == graph.num_nodes(target_ntype), f"'{name}' must match number of nodes of type '{target_ntype}'"
 
-    # Check label shape
-    if is_multi_label:
-        assert label.ndim == 2, "'label' should be 2D for multi-label classification"
-    else:
-        assert label.ndim == 1 or (label.ndim == 2 and label.shape[1] == 1), "'label' should be 1D for single-label classification"
+    # # Check label shape
+    # if is_multi_label:
+    #     assert label.ndim == 2, "'label' should be 2D for multi-label classification"
+    # else:
+    #     assert label.ndim == 1 or (label.ndim == 2 and label.shape[1] == 1), "'label' should be 1D for single-label classification"
 
     print("✅ All dataset conditions passed.")
 
 
 # ========== Main Execution ========== #
 if __name__ == "__main__":
-    dataset = SyntheticHGBDataset(dataset_name="syn_dblp", force_reload=True)
+    dataset = SyntheticHGBDataset(dataset_name="syn_recipe", force_reload=True)
     graph = dataset[0]
 
     print(graph)

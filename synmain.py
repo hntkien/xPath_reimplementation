@@ -14,7 +14,7 @@ from fidelity import eval_fidelity
 
 # ========== Configurations ========== # 
 HGN_TYPE = 'simplehgn'
-DATASET = 'syn_acm'
+DATASET = 'syn_recipe'
 TARGET_NTYPE = '0' # syntehtic datasets define the target node type as '0'
 N_LAYER = 3
 REPEAT_ID = 1 # experiment id
@@ -86,7 +86,8 @@ if __name__ == "__main__":
 	label_ntype = dataset.label_ntype
 	labels = graph.nodes[label_ntype].data["label"]
 	# graph = graph.to(device)
-	is_multi_label = dataset.is_multi_label
+	# is_multi_label = dataset.is_multi_label
+	is_multi_label = False
 
 	# # Test Nodes and Labels
 	# test_nodes = graph.nodes[TARGET_NTYPE].data['test_mask'].nonzero(as_tuple=True)[0]
@@ -121,7 +122,7 @@ if __name__ == "__main__":
 		residual=True,
 		alpha=0.05,
 		shared_weight=True,
-		is_multi_label=dataset.is_multi_label,
+		is_multi_label=is_multi_label,
 	)
 	ckpt = torch.load(hgn_path, map_location=device)
 	model.load_state_dict(ckpt["model_state"])

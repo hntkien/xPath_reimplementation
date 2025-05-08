@@ -85,7 +85,9 @@ if __name__ == "__main__":
     # ----- Load Dataset ----- #
     dataset = SyntheticHGBDataset(dataset_name=DATASET, force_reload=True)
     graph = dataset[0]
-    is_multi_label = dataset.is_multi_label 
+    # is_multi_label = dataset.is_multi_label 
+    # Temporarily set is_multi_label to False for testing
+    is_multi_label = False 
 
     # Train Nodes and Labels 
     train_node = graph.nodes[TARGET_NTYPE].data['train_mask'].nonzero(as_tuple=True)[0]
@@ -125,7 +127,7 @@ if __name__ == "__main__":
         residual=True,
         alpha=0.05,
         shared_weight=True,
-        is_multi_label=dataset.is_multi_label,
+        is_multi_label=is_multi_label,
     )
     model.to(device) 
     model.g = graph.to(device) 
