@@ -300,6 +300,8 @@ class xPathExplainer:
 				for tp in subgraph.ntypes}
 			
 			self.model.g = subgraph 
+
+			# TODO: Multi-label cases
 			logits = self.model.forward(x, self.target_ntype)
 
 			origin_probs = F.softmax(
@@ -364,7 +366,8 @@ class xPathExplainer:
 						continue 
 					tp, nid = n.split('-')
 					if int(nid) != target:
-						cause_nodes.add((tp, int(nid)))
+						# cause_nodes.add((tp, int(nid)))
+						cause_nodes.add(int(nid))
 						
 				# for i in range(0, len(p), 2):
 				# 	tp, nid = p[i], p[i+1]
