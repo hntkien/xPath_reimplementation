@@ -3,11 +3,19 @@ import logging
 
 # ========== Configurations ========== #
 HGN_TYPE = 'simplehgn'
-DATASET = 'syn_recipe'
+DATASET = 'syn_acm'
 TARGET_NTYPE = '0' # syntehtic datasets define the target node type as '0'
-N_LAYER = 3
-REPEAT_ID = 1 # Experiment id
+# N_LAYER = 3
+REPEAT_ID = 3 # Experiment id
 GPU = 0
+
+# Default configuration from SimpleHGN Paper
+if DATASET == 'syn_dblp' or DATASET == 'syn_acm':
+    N_LAYER = 3
+    s = 0.05
+elif DATASET == 'syn_imdb':
+    N_LAYER = 3
+    s = 0.1
 
 # Define Paths 
 abs_path = os.path.dirname(os.path.realpath(__file__))
@@ -75,6 +83,7 @@ MODEL_CONFIG = {
     "hgn_type": HGN_TYPE,
     "n_layer": N_LAYER,
     "gpu": GPU,
+    "neg_slope": s,
 }
 
 EXPLAIN_CONFIG = {

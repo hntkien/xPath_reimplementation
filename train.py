@@ -1,13 +1,14 @@
 import torch
 import numpy as np
 import copy
-from config import GPU, TARGET_NTYPE, HGN_TYPE, N_LAYER, NUM_CLASSES, hgn_path, graph_path, index_path, logger
+from config import DATASET_CONFIG, MODEL_CONFIG, hgn_path, graph_path, index_path, logger
 from utils import get_model, accuracy
 
 
 if __name__ == '__main__':
-    device = torch.device(f"cuda:{GPU}" if torch.cuda.is_available() else "cpu")
-    g, model, _info = get_model(HGN_TYPE, N_LAYER, NUM_CLASSES, graph_path, index_path)
+    device = torch.device(
+        f"cuda:{MODEL_CONFIG['gpu']}" if torch.cuda.is_available() else "cpu")
+    g, model, _info = get_model(MODEL_CONFIG, graph_path, index_path)
 
     model.to(device)
     model.g = g.to(device)
@@ -32,7 +33,7 @@ if __name__ == '__main__':
     for epoch in range(max_epoch):
         model.train()
         optimizer.zero_grad()
-        loss = model.loss(x, TARGET_NTYPE, train_node, train_label)
+        loss = model.loss(x, DATASET_CONFIG["target_ntype"], train_node, train_label)
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 3)
         optimizer.step()
@@ -41,19 +42,24 @@ if __name__ == '__main__':
 
         # Validation
         model.eval()
-        logits = model.forward(x, TARGET_NTYPE)
-        train_acc = accuracy(logits[train_node], train_label)
+        logits = model.forward(x, DATASET_CONFIG["target_ntype"])
+        # train_acc = accuracy(logits[train_node], train_label)
+        train_micro, train_macro = accuracy(logits[train_node], train_label)
         train_loss = model.cross_entropy_loss(logits[train_node], train_label).cpu().item()
-        val_acc = accuracy(logits[valid_node], valid_label)
+        # val_acc = accuracy(logits[valid_node], valid_label)
+        val_micro, val_macro = accuracy(logits[valid_node], valid_label)
         val_loss = model.cross_entropy_loss(logits[valid_node], valid_label).cpu().item()
         if epoch % log_epoch == 0:
-            logger.info(f"Train: {train_acc:.3f}, {train_loss:.3f}, Val: {val_acc:.3f}, {val_loss:.3f}")
-        if val_loss <= min_loss or val_acc >= max_score:
-            if val_acc >= best_score:
-                best_score = val_acc
+            # logger.info(f"Train: {train_acc:.3f}, {train_loss:.3f}, Val: {val_acc:.3f}, {val_loss:.3f}")
+            logger.info(
+                f"Train Micro-F1: {train_micro*100:.3f} | Train Macro-F1: {train_macro*100:.3f} | Train Loss: {train_loss:.3f} | "
+                f"Val Micro-F1: {val_micro*100:.3f} | Val Macro-F1: {val_macro*100:.3f} | Val Loss: {val_loss:.3f} |")
+        if val_loss <= min_loss or val_macro >= max_score:
+            if val_macro >= best_score:
+                best_score = val_macro
                 best_model = copy.deepcopy(model.state_dict())
             min_loss = np.min((min_loss, val_loss))
-            max_score = np.max((max_score, val_acc))
+            max_score = np.max((max_score, val_macro))
             patience = 0
         else:
             patience += 1
@@ -63,14 +69,16 @@ if __name__ == '__main__':
 
     # Test
     model.eval()
-    logits = model.forward(x, TARGET_NTYPE)
-    test_acc = accuracy(logits[test_node], test_label)
-    logger.info(f"Test ACC = {test_acc}")
+    logits = model.forward(x, DATASET_CONFIG["target_ntype"])
+    # test_acc = accuracy(logits[test_node], test_label)
+    # logger.info(f"Test ACC = {test_acc}")
+    test_micro, test_macro = accuracy(logits[test_node], test_label)
+    logger.info(f"Test Micro-F1: {test_micro*100:.3f} \t Test Macro-F1: {test_macro*100:.3f}")
 
     torch.save(
         {
             "epoch": epoch,
-            "model_type": HGN_TYPE,
+            "model_type": MODEL_CONFIG["hgn_type"],
             "optimizer": optimizer,
             "model_state": model.state_dict(),
             "optimizer_state": optimizer.state_dict(),

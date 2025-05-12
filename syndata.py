@@ -3,6 +3,7 @@ import pandas as pd
 import torch 
 import dgl 
 from dgl.data import DGLDataset 
+from synconfig import DATASET_CONFIG
 
 # ========== SyntheticHGBDataset Class ========== #
 class SyntheticHGBDataset(DGLDataset):
@@ -118,10 +119,9 @@ class SyntheticHGBDataset(DGLDataset):
             self.graph.nodes[self.label_ntype].data[f"{split}_mask"] = mask 
 
         # --- Save number of classes --- #
-        # self.num_classes = int(
-        #     self.graph.nodes[self.label_ntype].data["label"].max().item() + 1)
         label_data = self.graph.nodes[self.label_ntype].data["label"] 
-
+        
+        # # Multi-label datasets (IMDB, Recipe)
         # if self.is_multi_label: 
         #     self.num_classes = label_data.shape[1] 
         # else:
@@ -160,16 +160,17 @@ class SyntheticHGBDataset(DGLDataset):
             #     label_tensor[i, lbls] = 1.0 
             
             self.is_multi_label = True 
+
             # Temporarily treat multi-label as single-label dataset by selecting the first label 
             labels = [int(label.split()[0]) for label in label_strs]
             label_tensor = torch.tensor(labels, dtype=torch.long)
 
             return label_tensor 
         else:
-            labels = torch.tensor(
+            label_tensor = torch.tensor(
                 [int(label) for label in label_strs], dtype=torch.long) 
             self.is_multi_label = False 
-            return labels
+            return label_tensor
         
     def has_cache(self) -> bool:
         return os.path.exists(self.save_path) 
@@ -229,13 +230,15 @@ def check_dataset_conditions(graph, target_ntype, is_multi_label):
 
 # ========== Main Execution ========== #
 if __name__ == "__main__":
-    dataset = SyntheticHGBDataset(dataset_name="syn_recipe", force_reload=True)
+    dataset = SyntheticHGBDataset(
+        dataset_name=DATASET_CONFIG["dataset_name"], 
+        force_reload=DATASET_CONFIG["force_reload"])
     graph = dataset[0]
 
     print(graph)
     print(f"\n Dataset Statistics")
     print(f"Number of classes: {dataset.num_classes}")
-    print(f"Is multi-label: {dataset.is_multi_label}")
+    # print(f"Is multi-label: {dataset.is_multi_label}")
     print(f"Total number of nodes: {graph.num_nodes()}")
     print(f"Total number of edges: {graph.num_edges()}")
     print(f"Node types: {graph.ntypes}")
@@ -261,3 +264,4 @@ if __name__ == "__main__":
         print(f"  - '{etype}': {graph.num_edges(etype)} edges")
 
     check_dataset_conditions(graph, dataset.label_ntype, dataset.is_multi_label)
+    print(f"Is Multi-label Dataset: {graph.nodes[dataset.label_ntype].data['label'].ndim==2}") 

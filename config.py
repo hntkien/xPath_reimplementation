@@ -3,10 +3,29 @@ import logging
 
 
 HGN_TYPE = 'simplehgn'
-DATASET = 'acm'
-N_LAYER = 2
-REPEAT_ID = 1 # experiment id
+DATASET = 'imdb'
+# N_LAYER = 2
+REPEAT_ID = 3 # experiment id
 GPU = 0
+
+# Default configuration from SimpleHGN Paper
+if DATASET == 'dblp':
+    TARGET_NTYPE = 'author'
+    NUM_CLASSES = 4
+    N_LAYER = 3
+    s = 0.05
+
+elif DATASET == 'acm':
+    TARGET_NTYPE = 'paper'
+    NUM_CLASSES = 3
+    N_LAYER = 3
+    s = 0.05
+
+elif DATASET == 'imdb':
+    TARGET_NTYPE = 'movie'
+    NUM_CLASSES = 3
+    N_LAYER = 3
+    s = 0.1
 
 abs_path = os.path.dirname(os.path.realpath(__file__))
 log_dir = os.path.join(abs_path, 'log')
@@ -44,17 +63,6 @@ if HGN_TYPE=='simplehgn':
 else:
     index_path = f"{data_dir}/{DATASET}_index_2000.bin"
 
-if DATASET == 'dblp':
-    TARGET_NTYPE = 'author'
-    NUM_CLASSES = 4
-
-elif DATASET == 'acm':
-    TARGET_NTYPE = 'paper'
-    NUM_CLASSES = 3
-
-elif DATASET == 'imdb':
-    TARGET_NTYPE = 'movie'
-    NUM_CLASSES = 3
 
 # init logger
 log_root = log_dir + f'/{HGN_TYPE}'
@@ -70,3 +78,17 @@ logger = logging.getLogger('updateSecurity')
 logger.setLevel('DEBUG')
 logger.addHandler(file_handler)
 logger.addHandler(console_handler)
+
+DATASET_CONFIG = {
+    "dataset_name": DATASET,
+    "target_ntype": TARGET_NTYPE,
+    # "force_reload": True,
+}
+
+MODEL_CONFIG = {
+    "hgn_type": HGN_TYPE,
+    "n_layer": N_LAYER,
+    "gpu": GPU,
+    "num_classes": NUM_CLASSES,
+    "neg_slope": s,
+}
