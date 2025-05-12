@@ -6,28 +6,65 @@ import dgl
 import hgn
 import numpy as np
 import pandas as pd 
+from sklearn.metrics import f1_score
+
+# def accuracy(y_pred, y_true):
+#     y_true = y_true.squeeze().long()
+#     preds = y_pred.max(1)[1].type_as(y_true)
+#     correct = preds.eq(y_true).double()
+#     correct = correct.sum().item()
+#     return correct / len(y_true)
 
 def accuracy(y_pred, y_true):
+    """
+    Calculate micro and macro F1 scores.
+
+    Args:
+        y_pred (torch.Tensor): Predicted logits or probabilities.
+        y_true (torch.Tensor): Ground truth labels.
+
+    Returns:
+        tuple: (micro_f1, macro_f1)
+    """
     y_true = y_true.squeeze().long()
-    preds = y_pred.max(1)[1].type_as(y_true)
-    correct = preds.eq(y_true).double()
-    correct = correct.sum().item()
-    return correct / len(y_true)
+    preds = y_pred.max(1)[1].type_as(y_true)  # Get predicted class indices
+
+    # Convert tensors to numpy arrays for sklearn
+    y_true_np = y_true.cpu().numpy()
+    preds_np = preds.cpu().numpy()
+
+    # Calculate micro and macro F1 scores
+    micro_f1 = f1_score(y_true_np, preds_np, average='micro')
+    macro_f1 = f1_score(y_true_np, preds_np, average='macro')
+
+    return micro_f1, macro_f1
 
 
-def get_model(hgn_model_type, n_layer, num_classes, graph_path, index_path):
+def get_model(model_config, graph_path, index_path):
     model, _info = None, None
     gs, _ = dgl.load_graphs(graph_path)
     g = gs[0]
     _info = torch.load(index_path)
-    if hgn_model_type == 'simplehgn':
+    if model_config["hgn_type"] == 'simplehgn':
         in_dim = {n: g.nodes[n].data['nfeat'].shape[1] for n in g.ntypes}
         edge_type_num = len(g.etypes)
 
-        model = hgn.SimpleHeteroHGN(32, edge_type_num, in_dim, 32, num_classes, 
-                                    n_layer, [8] * n_layer, 0.5, 0.5, 0.05, True, 0.05, shared_weight=True)
+        model = hgn.SimpleHeteroHGN(
+            edge_dim=64, 
+            num_etypes=edge_type_num, 
+            in_dims=in_dim, 
+            num_hidden=64, 
+            num_classes=model_config["num_classes"], 
+            num_layers=model_config["n_layer"], 
+            heads=[8] * model_config["n_layer"], 
+            feat_drop=0.5, 
+            attn_drop=0.5, 
+            negative_slope=model_config["neg_slope"], 
+            residual=True, 
+            alpha=0.05, 
+            shared_weight=True)
 
-    elif hgn_model_type == 'hgt':
+    elif model_config["hgn_type"] == 'hgt':
         node_dict = {}
         edge_dict = {}
         n_inp = {}
@@ -38,7 +75,7 @@ def get_model(hgn_model_type, n_layer, num_classes, graph_path, index_path):
             edge_dict[etype] = len(edge_dict)
             g.edges[etype].data['id'] = torch.ones(g.number_of_edges(etype), dtype=torch.long) * edge_dict[etype]
         model = hgn.HGT(node_dict, edge_dict, n_inp=n_inp, n_hid=32, 
-                        n_out=num_classes, n_layers=n_layer, n_heads=4, 
+                        n_out=model_config["num_classes"], n_layers=model_config["n_layer"], n_heads=4, 
                         use_norm=True)
 
     return g, model, _info
