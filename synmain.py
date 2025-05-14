@@ -10,10 +10,10 @@ from utils import load_xpath, filter_test_nodes, load_ground_truth_causes
 from fidelity import eval_fidelity
 from synconfig import logger, PATHS, DATASET_CONFIG, MODEL_CONFIG, EXPLAIN_CONFIG, REPEAT_ID 
 
-if DATASET_CONFIG["dataset_name"] == "syn_dblp":
-	edge_dim = 16
-	num_hidden = 32
-	n_layers = 2 
+# if DATASET_CONFIG["dataset_name"] == "syn_dblp":
+# 	edge_dim = 16
+# 	num_hidden = 32
+# 	n_layers = 2 
 
 # ========== Main Execution ========== #
 if __name__ == "__main__": 
@@ -56,16 +56,17 @@ if __name__ == "__main__":
 		for ntype in graph.ntypes
 	}
 	model = SimpleHeteroHGN(
-		edge_dim=64,
+		edge_dim=32,
 		num_etypes=len(graph.etypes),
 		in_dims=in_dim,
-		num_hidden=64,
+		num_hidden=32,
 		num_classes=dataset.num_classes,
 		num_layers=MODEL_CONFIG["n_layer"],
 		heads=[8] * MODEL_CONFIG["n_layer"],
 		feat_drop=0.5,
 		attn_drop=0.5,
-		negative_slope=MODEL_CONFIG["neg_slope"],
+		# negative_slope=MODEL_CONFIG["neg_slope"],
+		negative_slope=0.05,
 		residual=True,
 		alpha=0.05,
 		shared_weight=True,
@@ -114,12 +115,6 @@ if __name__ == "__main__":
 	x, average_ne = load_xpath(PATHS["result_path"], EXPLAIN_CONFIG["xpath_top_k"])
 	logger.info(f'Average neighborhood size {average_ne:.3f}')
 	logger.info('Evaluating fidelity...')
-
-	# # only evaluate explanation for correctly predicted nodes
-	# explain_node = torch.Tensor(filter_test_nodes(
-	# 		node_list=test_nodes, 
-	# 		label=labels.tolist(), 
-	# 		pred_list_path=pred_list_path))
 
 	# only evaluate explanation for correctly predicted nodes
 	explain_node = torch.Tensor(filter_test_nodes(
