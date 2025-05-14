@@ -1,5 +1,5 @@
 from sklearn.metrics import precision_score, recall_score, f1_score 
-from synconfig import DATASET_CONFIG, PATHS
+from synconfig import DATASET_CONFIG, PATHS, logger
 from utils import load_ground_truth_causes
 import json
 
@@ -40,16 +40,16 @@ def evaluate_explainer_predictions(
             y_pred_all.append(1 if node in predicted_causes else 0) 
 
     precision = precision_score(
-        y_true_all, y_pred_all, zero_division=0, average="micro") 
+        y_true_all, y_pred_all, zero_division=0, average="macro") 
     recall = recall_score(
-        y_true_all, y_pred_all, zero_division=0, average="micro")
+        y_true_all, y_pred_all, zero_division=0, average="macro")
     f1 = f1_score(
-        y_true_all, y_pred_all, zero_division=0, average="micro")
+        y_true_all, y_pred_all, zero_division=0, average="macro")
 
     return {
-        "precision": precision,
-        "recall": recall,
-        "f1": f1,
+        "precision": precision*100,
+        "recall": recall*100,
+        "f1": f1*100,
     }
 
 def compute_iou_scores(
@@ -116,6 +116,7 @@ if __name__ == "__main__":
     )
     # Print the evaluation results
     print(f"Evaluation Results: {evaluation_results}")
+    # logger.info(f"Evaluation Results: {evaluation_results}")
 
     # Compute IoU scores
     iou_scores = compute_iou_scores(
@@ -123,4 +124,5 @@ if __name__ == "__main__":
         ground_truth_dict=gt_dict,
     )
     mean_iou = average_io(iou_scores)
-    print(f"Mean IoU: {mean_iou:.4f}")
+    print(f"Mean IoU: {mean_iou*100:.4f}")
+    # logger.info(f"Mean IoU: {mean_iou*100:.4f}")
