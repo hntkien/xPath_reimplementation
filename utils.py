@@ -167,7 +167,7 @@ def load_ground_truth_causes(
             # related_nodes = set(df["src"].tolist() + df["dst"].tolist())
             # cause_nodes = list(related_nodes - {target_id})
 
-            related_nodes = set(df["src"].tolist())
+            related_nodes = set(df["src"].tolist() + df["dst"].tolist())
 
             cause_dict[str(target_id)] = list(related_nodes)
             target_nodes.append(target_id)

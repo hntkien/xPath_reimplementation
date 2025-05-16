@@ -3,10 +3,10 @@ import logging
 
 # ========== Configurations ========== #
 HGN_TYPE = 'simplehgn'
-DATASET = 'syn_imdb'
+DATASET = 'syn_dblp'
 TARGET_NTYPE = '0' # syntehtic datasets define the target node type as '0'
 # N_LAYER = 3
-REPEAT_ID = 4 # Experiment id
+REPEAT_ID = 5 # Experiment id
 GPU = 0
 
 # Default configuration from SimpleHGN Paper

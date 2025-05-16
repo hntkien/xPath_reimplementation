@@ -336,7 +336,9 @@ class xPathExplainer:
 							probabilities = F.softmax(y, dim=-1).detach().cpu().tolist()
 							
 							path_scores[path_key] = get_score(
-								origin_probs, probabilities, label=origin_label)
+								origin_probs, 
+								probabilities, 
+								label=int(origin_label))
 							top_k_paths[path_key] = path_scores[path_key]
 				
 				values = list(top_k_paths.values())
@@ -360,11 +362,12 @@ class xPathExplainer:
 			cause_nodes = set()
 
 			for path_str in path_scores:
-				p = path_str[:-1].split(',')
+				p = path_str.split(',')[:-1]
+				
 				# for n in p:
 				# 	if not n: 
 				# 		continue 
-				# 	tp, nid = n.split('-')
+				# 	tp, nid = tuple(n.split('-'))
 				# 	if int(nid) != target:
 				# 		# cause_nodes.add((tp, int(nid)))
 				# 		cause_nodes.add(int(nid))
@@ -374,10 +377,10 @@ class xPathExplainer:
 				if int(nid) != target:
 					cause_nodes.add(int(nid))
 						
-				# for i in range(0, len(p), 2):
-				# 	tp, nid = p[i], p[i+1]
-				# 	if int(nid) != target:
-				# 		cause_nodes.add((tp, int(nid)))
+			# 	for i in range(0, len(p), 2):
+			# 		tp, nid = p[i], p[i+1]
+			# 		if int(nid) != target:
+			# 			cause_nodes.add((tp, int(nid)))
 
 			cause_nodes_dict[target] = sorted(list(cause_nodes))
 

@@ -56,17 +56,17 @@ if __name__ == "__main__":
 		for ntype in graph.ntypes
 	}
 	model = SimpleHeteroHGN(
-		edge_dim=32,
+		edge_dim=64,
 		num_etypes=len(graph.etypes),
 		in_dims=in_dim,
-		num_hidden=32,
+		num_hidden=64,
 		num_classes=dataset.num_classes,
 		num_layers=MODEL_CONFIG["n_layer"],
 		heads=[8] * MODEL_CONFIG["n_layer"],
 		feat_drop=0.5,
 		attn_drop=0.5,
-		# negative_slope=MODEL_CONFIG["neg_slope"],
-		negative_slope=0.05,
+		negative_slope=MODEL_CONFIG["neg_slope"],
+		# negative_slope=0.05,
 		residual=True,
 		alpha=0.05,
 		shared_weight=True,

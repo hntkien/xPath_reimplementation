@@ -89,17 +89,17 @@ if __name__ == "__main__":
 
     # ----- Load Model ----- #
     model = SimpleHeteroHGN(
-        edge_dim=32,
+        edge_dim=64, # 16 if dblp
         num_etypes=len(graph.etypes),
         in_dims=in_dim,
-        num_hidden=32,
+        num_hidden=64,
         num_classes=dataset.num_classes,
         num_layers=MODEL_CONFIG["n_layer"],
         heads=[8] * MODEL_CONFIG["n_layer"],
         feat_drop=0.5,
         attn_drop=0.5,
-        # negative_slope=MODEL_CONFIG["neg_slope"],
-        negative_slope=0.05,
+        negative_slope=MODEL_CONFIG["neg_slope"],
+        # negative_slope=0.05,
         residual=True,
         alpha=0.05,
         shared_weight=True,
@@ -109,7 +109,7 @@ if __name__ == "__main__":
     model.g = graph.to(device) 
     optimizer = torch.optim.Adam(
         model.parameters(), 
-        lr=0.0001, 
+        lr=0.01, 
         weight_decay=5e-5)
 
     # Training loop

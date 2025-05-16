@@ -24,8 +24,11 @@ def evaluate_explainer_predictions(
             - recall (float): Recall score. 
             - f1 (float): F1 score.
     """
-    y_true_all = [] 
-    y_pred_all = [] 
+    # y_true_all = [] 
+    # y_pred_all = [] 
+    precisions = [] 
+    recalls = [] 
+    f1s = [] 
 
     for target_id in target_nodes:
         tid = str(target_id) 
@@ -35,16 +38,32 @@ def evaluate_explainer_predictions(
 
         all_nodes = true_causes.union(predicted_causes) 
 
-        for node in all_nodes:
-            y_true_all.append(1 if node in true_causes else 0) 
-            y_pred_all.append(1 if node in predicted_causes else 0) 
+        # for node in all_nodes:
+        #     y_true_all.append(1 if node in true_causes else 0) 
+        #     y_pred_all.append(1 if node in predicted_causes else 0) 
 
-    precision = precision_score(
-        y_true_all, y_pred_all, zero_division=0, average="macro") 
-    recall = recall_score(
-        y_true_all, y_pred_all, zero_division=0, average="macro")
-    f1 = f1_score(
-        y_true_all, y_pred_all, zero_division=0, average="macro")
+        y_true = [1 if node in true_causes else 0 for node in all_nodes]
+        y_pred = [1 if node in predicted_causes else 0 for node in all_nodes]
+
+        # Calculate precision, recall, and F1 score for the current target node
+        precisions.append(
+            precision_score(y_true, y_pred, zero_division=0, average="macro"))
+        recalls.append(
+            recall_score(y_true, y_pred, zero_division=0, average="macro"))
+        f1s.append(
+            f1_score(y_true, y_pred, zero_division=0, average="macro"))
+        
+
+    # precision = precision_score(
+    #     y_true_all, y_pred_all, zero_division=0, average="macro") 
+    # recall = recall_score(
+    #     y_true_all, y_pred_all, zero_division=0, average="macro")
+    # f1 = f1_score(
+    #     y_true_all, y_pred_all, zero_division=0, average="macro")
+
+    precision = sum(precisions) / len(precisions) if precisions else 0.0 
+    recall = sum(recalls) / len(recalls) if recalls else 0.0
+    f1 = sum(f1s) / len(f1s) if f1s else 0.0
 
     return {
         "precision": precision*100,
@@ -115,8 +134,8 @@ if __name__ == "__main__":
         target_nodes=target_nodes,
     )
     # Print the evaluation results
-    print(f"Evaluation Results: {evaluation_results}")
-    # logger.info(f"Evaluation Results: {evaluation_results}")
+    # print(f"Evaluation Results: {evaluation_results}")
+    logger.info(f"Evaluation Results: {evaluation_results}")
 
     # Compute IoU scores
     iou_scores = compute_iou_scores(
@@ -124,5 +143,5 @@ if __name__ == "__main__":
         ground_truth_dict=gt_dict,
     )
     mean_iou = average_io(iou_scores)
-    print(f"Mean IoU: {mean_iou*100:.4f}")
-    # logger.info(f"Mean IoU: {mean_iou*100:.4f}")
+    # print(f"Mean IoU: {mean_iou*100:.4f}")
+    logger.info(f"Mean IoU: {mean_iou*100:.4f}")
