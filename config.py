@@ -3,8 +3,8 @@ import logging
 
 
 HGN_TYPE = 'simplehgn'
-DATASET = 'acm'
-N_LAYER = 2
+DATASET = 'dblp'
+N_LAYER = 3
 REPEAT_ID = 1 # experiment id
 GPU = 0
 
@@ -36,8 +36,8 @@ pred_list_path = f"{ckpt_dir}/{HGN_TYPE}_{DATASET}_pred_list_{N_LAYER}.json"
 #hgn_path = f"{ckpt_dir}/{HGN_TYPE}_{DATASET}_{N_LAYER}"
 # To use trained model:
 hgn_path = f"{ckpt_dir}/bk/{HGN_TYPE}_{DATASET}_{N_LAYER}"
-graph_path = f"{data_dir}/{DATASET}_graph.bin"
-result_path = f'{result_dir}/{DATASET}_l{N_LAYER}_xpath2s_{XPATH_BEAM}_{XPATH_SAMPLE_N}_exp{REPEAT_ID}'
+graph_path = f"{data_dir}/hgb_{DATASET}.bin"
+result_path = f'{result_dir}/{DATASET}_l{N_LAYER}_xpath2s_{XPATH_BEAM}_{XPATH_SAMPLE_N}_exp{REPEAT_ID}.json'
 
 if HGN_TYPE=='simplehgn':
     index_path = f"{data_dir}/{DATASET}_index_60.bin"

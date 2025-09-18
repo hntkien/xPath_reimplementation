@@ -131,6 +131,8 @@ class myHeteroGATConv(nn.Module):
         self._allow_zero_in_degree = set_value
 
     def forward(self, graph, nfeat, res_attn=None):
+        # Create edge type to index mapping
+        etype_to_idx = {etype: i for i, etype in enumerate(graph.canonical_etypes)}
         with graph.local_scope():
             funcs = {}
 
@@ -144,14 +146,15 @@ class myHeteroGATConv(nn.Module):
                 if self.res_fc is not None:
                     graph.nodes[ntype].data['h'] = h
 
-            for src, etype, dst in graph.canonical_etypes:
+            for etype in graph.canonical_etypes:
+                src, _, dst = etype
                 feat_src = graph.nodes[src].data['ft']
                 feat_dst = graph.nodes[dst].data['ft']
                 el = (feat_src * self.attn_l).sum(dim=-1).unsqueeze(-1)
                 graph.nodes[src].data['el'] = el
                 er = (feat_dst * self.attn_r).sum(dim=-1).unsqueeze(-1)
                 graph.nodes[dst].data['er'] = er
-                e_feat = self.edge_emb[int(etype)].unsqueeze(0)
+                e_feat = self.edge_emb[etype_to_idx[etype]].unsqueeze(0)
                 e_feat = self.fc_e(e_feat).view(-1, self._num_heads, self._edge_feats)
                 ee = (e_feat * self.attn_e).sum(dim=-1).unsqueeze(-1).expand(graph.number_of_edges(etype),
                                                                              self._num_heads, 1)
@@ -162,7 +165,8 @@ class myHeteroGATConv(nn.Module):
             a = self.attn_drop(edge_softmax(hg, hg.edata.pop("a")))
             e_t = hg.edata['_TYPE']
 
-            for src, etype, dst in graph.canonical_etypes:
+            for etype in graph.canonical_etypes:
+                src, _, dst = etype
                 t = graph.get_etype_id(etype)
                 graph.edges[etype].data["a"] = a[e_t == t]
                 if res_attn is not None:
@@ -190,7 +194,7 @@ class myHeteroGATConv(nn.Module):
             if self.activation:
                 for ntype in graph.ntypes:
                     rst[ntype] = self.activation(rst[ntype])
-            res_attn = {e: graph.edges[e].data["a"].detach() for e in graph.etypes}
+            res_attn = {e: graph.edges[e].data["a"].detach() for e in graph.canonical_etypes}
             graph.edata.pop("a")
             return rst, res_attn
 

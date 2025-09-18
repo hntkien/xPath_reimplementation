@@ -12,17 +12,16 @@ def accuracy(y_pred, y_true):
     return correct / len(y_true)
 
 
-def get_model(hgn_model_type, n_layer, num_classes, graph_path, index_path):
-    model, _info = None, None
+def get_model(hgn_model_type, n_layer, graph_path):
+    model = None 
     gs, _ = dgl.load_graphs(graph_path)
     g = gs[0]
-    _info = torch.load(index_path)
+    num_classes = torch.unique(g.ndata['label'][list(g.ndata['label'].keys())[0]]).shape[0]
     if hgn_model_type == 'simplehgn':
-        in_dim = {n: g.nodes[n].data['nfeat'].shape[1] for n in g.ntypes}
+        in_dim = {n: g.nodes[n].data['feat'].shape[1] for n in g.ntypes}
         edge_type_num = len(g.etypes)
 
-        model = hgn.SimpleHeteroHGN(32, edge_type_num, in_dim, 32, num_classes, n_layer,
-                                    [8] * n_layer, 0.5, 0.5, 0.05, True, 0.05, shared_weight=True)
+        model = hgn.SimpleHeteroHGN(32, edge_type_num, in_dim, 32, num_classes, n_layer, [8] * n_layer, 0.5, 0.5, 0.05, True, 0.05, shared_weight=True)
 
     elif hgn_model_type == 'hgt':
         node_dict = {}
@@ -30,14 +29,13 @@ def get_model(hgn_model_type, n_layer, num_classes, graph_path, index_path):
         n_inp = {}
         for ntype in g.ntypes:
             node_dict[ntype] = len(node_dict)
-            n_inp[node_dict[ntype]] = g.nodes[ntype].data['nfeat'].shape[1]
-        for etype in g.etypes:
+            n_inp[node_dict[ntype]] = g.nodes[ntype].data['feat'].shape[1]
+        for etype in g.canonical_etypes:
             edge_dict[etype] = len(edge_dict)
             g.edges[etype].data['id'] = torch.ones(g.number_of_edges(etype), dtype=torch.long) * edge_dict[etype]
-        model = hgn.HGT(node_dict, edge_dict, n_inp=n_inp, n_hid=32, n_out=num_classes,
-                        n_layers=n_layer, n_heads=4, use_norm=True)
+        model = hgn.HGT(node_dict, edge_dict, n_inp=n_inp, n_hid=32, n_out=num_classes, n_layers=n_layer, n_heads=4, use_norm=True)
 
-    return g, model, _info
+    return g, model
 
 
 def filter_test_nodes(node_list, label, pred_list_path):

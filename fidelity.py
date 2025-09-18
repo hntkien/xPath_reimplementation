@@ -49,13 +49,13 @@ def get_path_gm(g, x, target_ntype, nid, n2etp):
     for tp in gm_nodes:
         n = len(gm_nodes[tp])
         gm_edges[n2etp[(tp, tp)]] = ([i for i in range(n)], [i for i in range(n)])
-        feat[tp] = g.nodes[tp].data['nfeat'][gm_nodes[tp], :]
+        feat[tp] = g.nodes[tp].data['feat'][gm_nodes[tp], :]
 
     new_target_id = gm_nodes[target_ntype].index(nid)
 
     gm = dgl.heterograph(gm_edges)
     for tp in feat:
-        gm.nodes[tp].data['nfeat'] = feat[tp]
+        gm.nodes[tp].data['feat'] = feat[tp]
 
     return gm, new_target_id
 
@@ -69,7 +69,7 @@ def eval_fidelity(x, g, model, label, target_ntype, n_layer, num_classes, node_l
 
     sampler = dgl.dataloading.MultiLayerFullNeighborSampler(n_layer)
     subgraph_dataloader = \
-        dgl.dataloading.NodeDataLoader(g, {target_ntype: node_list.type(torch.int64).to(device)},
+        dgl.dataloading.DataLoader(g, {target_ntype: node_list.type(torch.int64).to(device)},
                                     sampler, batch_size=1, shuffle=False, drop_last=False)
     i = 0
     fmask_accs = []
@@ -85,7 +85,7 @@ def eval_fidelity(x, g, model, label, target_ntype, n_layer, num_classes, node_l
         g_c = g_c.to(device)
         X = {}
         for tp in g_c.ntypes:
-            X[tp] = g_c.ndata["nfeat"][tp].clone()
+            X[tp] = g_c.ndata["feat"][tp].clone()
 
         with torch.no_grad():
             model.g = g_c
@@ -98,7 +98,7 @@ def eval_fidelity(x, g, model, label, target_ntype, n_layer, num_classes, node_l
         g_m = g_m.to(device)
         X = {}
         for tp in g_m.ntypes:
-            X[tp] = g_m.ndata["nfeat"][tp].clone()
+            X[tp] = g_m.ndata["feat"][tp].clone()
         with torch.no_grad():
             model.g = g_m
             logits = model.forward(X, target_ntype).reshape(shape=(-1, num_classes))

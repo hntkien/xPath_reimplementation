@@ -7,17 +7,24 @@ from utils import get_model, accuracy
 
 if __name__ == '__main__':
     device = torch.device(f"cuda:{GPU}" if torch.cuda.is_available() else "cpu")
-    g, model, _info = get_model(HGN_TYPE, N_LAYER, NUM_CLASSES, graph_path, index_path)
+    g, model = get_model(HGN_TYPE, N_LAYER, graph_path)
 
     model.to(device)
     model.g = g.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.0001, weight_decay=5e-5)
-    train_node = _info["train_index"].long().to(device)
-    train_label = _info["train_label"].long().to(device)
-    valid_node = _info["valid_index"].long().to(device)
-    valid_label = _info["valid_label"].long().to(device)
-    test_node = _info["test_index"].long().to(device)
-    test_label = _info["test_label"].long().to(device)
+    target_ntype = list(g.ndata['label'].keys())[0]
+    labels = g.nodes[target_ntype].data["label"] 
+    train_masks = g.nodes[target_ntype].data["train_mask"].to(torch.bool)
+    val_masks = g.nodes[target_ntype].data["val_mask"].to(torch.bool)
+    test_masks = g.nodes[target_ntype].data["test_mask"].to(torch.bool)
+    # Extract indices 
+    train_nodes = train_masks.nonzero().squeeze().long().to(device)
+    val_nodes = val_masks.nonzero().squeeze().long().to(device)
+    test_nodes = test_masks.nonzero().squeeze().long().to(device)
+    # Extract labels
+    train_labels = labels[train_masks].long().to(device)
+    val_labels = labels[val_masks].long().to(device)
+    test_labels = labels[test_masks].long().to(device)
 
     patience = 0
     best_score = 0
@@ -28,11 +35,11 @@ if __name__ == '__main__':
     max_epoch = 2000
     max_patience = 50
 
-    x = model.g.ndata.pop("nfeat")
+    x = model.g.ndata.pop("feat")
     for epoch in range(max_epoch):
         model.train()
         optimizer.zero_grad()
-        loss = model.loss(x, TARGET_NTYPE, train_node, train_label)
+        loss = model.loss(x, target_ntype, train_nodes, train_labels)
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 3)
         optimizer.step()
@@ -41,11 +48,11 @@ if __name__ == '__main__':
 
         # Validation
         model.eval()
-        logits = model.forward(x, TARGET_NTYPE)
-        train_acc = accuracy(logits[train_node], train_label)
-        train_loss = model.cross_entropy_loss(logits[train_node], train_label).cpu().item()
-        val_acc = accuracy(logits[valid_node], valid_label)
-        val_loss = model.cross_entropy_loss(logits[valid_node], valid_label).cpu().item()
+        logits = model.forward(x, target_ntype)
+        train_acc = accuracy(logits[train_nodes], train_labels)
+        train_loss = model.cross_entropy_loss(logits[train_nodes], train_labels).cpu().item()
+        val_acc = accuracy(logits[val_nodes], val_labels)
+        val_loss = model.cross_entropy_loss(logits[val_nodes], val_labels).cpu().item()
         if epoch % log_epoch == 0:
             logger.info(f"Train: {train_acc:.3f}, {train_loss:.3f}, Val: {val_acc:.3f}, {val_loss:.3f}")
         if val_loss <= min_loss or val_acc >= max_score:
@@ -63,8 +70,8 @@ if __name__ == '__main__':
 
     # Test
     model.eval()
-    logits = model.forward(x, TARGET_NTYPE)
-    test_acc = accuracy(logits[test_node], test_label)
+    logits = model.forward(x, target_ntype)
+    test_acc = accuracy(logits[test_nodes], test_labels)
     logger.info(f"Test ACC = {test_acc}")
 
     torch.save(
