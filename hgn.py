@@ -331,8 +331,9 @@ class HGTLayer(nn.Module):
     def forward(self, G, h):
         with G.local_scope():
             node_dict, edge_dict = self.node_dict, self.edge_dict
-            for srctype, etype, dsttype in G.canonical_etypes:
-                sub_graph = G[srctype, etype, dsttype]
+            for etype in G.canonical_etypes:
+                srctype, _, dsttype = etype
+                sub_graph = G[etype]
 
                 k_linear = self.k_linears[node_dict[srctype]]
                 v_linear = self.v_linears[node_dict[srctype]]

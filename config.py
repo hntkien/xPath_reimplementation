@@ -2,10 +2,10 @@ import os
 import logging
 
 
-HGN_TYPE = 'simplehgn'
-DATASET = 'dblp'
-N_LAYER = 3
-REPEAT_ID = 1 # experiment id
+HGN_TYPE = 'hgt'
+DATASET = 'acm'
+N_LAYER = 2
+REPEAT_ID = 0 # experiment id
 GPU = 0
 
 abs_path = os.path.dirname(os.path.realpath(__file__))

@@ -28,7 +28,7 @@ if __name__ == '__main__':
     num_classes = torch.unique(labels).shape[0]
     test_masks = g.nodes[target_ntype].data["test_mask"].to(torch.bool)
     # Extract indices 
-    test_nodes = test_masks.nonzero().squeeze()
+    test_nodes = test_masks.nonzero().squeeze()[:1000]
     # Extract labels
     test_labels = labels[test_masks]
 
