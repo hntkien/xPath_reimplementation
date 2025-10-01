@@ -57,7 +57,7 @@ class xPath_Explainer:
         aptp = [tmp[i] for i in range(0, len(tmp), 2)]
         apid = [int(tmp[i]) for i in range(1, len(tmp), 2)]
         res = {}
-        one_hop_loader = dgl.dataloading.NodeDataLoader(g, {aptp[-1]: torch.tensor([apid[-1]], dtype=torch.int64, device=self.device)},
+        one_hop_loader = dgl.dataloading.DataLoader(g, {aptp[-1]: torch.tensor([apid[-1]], dtype=torch.int64, device=self.device)},
                                                         self.one_hop_sampler, batch_size=1, shuffle=False, drop_last=False)
         for neighbors, _, _ in one_hop_loader:
             for tp in neighbors:
@@ -161,7 +161,7 @@ class xPath_Explainer:
 
     def explain_beam(self, g, node_list, beam=3, sample_n=10):
         sampler = dgl.dataloading.MultiLayerFullNeighborSampler(self.num_layers)
-        subgraph_dataloader = dgl.dataloading.NodeDataLoader(g, {self.target_ntype: node_list.type(torch.int64)}, sampler,
+        subgraph_dataloader = dgl.dataloading.DataLoader(g, {self.target_ntype: node_list.type(torch.int64)}, sampler,
                                                              batch_size=1, shuffle=False, drop_last=False)
         j = 0
         xpath = {}
